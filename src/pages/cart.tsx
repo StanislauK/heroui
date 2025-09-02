@@ -1,8 +1,9 @@
 import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
 import { useTelegram } from "@/hooks/useTelegram";
-import { getCartItemsByTelegramId, updateCartItemQuantity, removeFromCart } from "@/lib/supabase";
+import { getCartItemsByTelegramId, updateCartItemQuantity, removeFromCart, createOrder, addOrderItems, clearCartAfterOrder } from "@/lib/supabase";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface CartItem {
   id: string;
@@ -24,9 +25,11 @@ interface CartItem {
 
 export default function CartPage() {
   const { user: telegramUser } = useTelegram();
+  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [orderLoading, setOrderLoading] = useState(false);
 
   // Загружаем корзину пользователя
   useEffect(() => {
@@ -95,6 +98,52 @@ export default function CartPage() {
       setCartItems(prev => prev.filter(item => item.id !== cartItemId));
     } catch (err: any) {
       console.error('Error removing item:', err);
+    }
+  };
+
+  // Создаем заказ
+  const handleCreateOrder = async () => {
+    if (!telegramUser || cartItems.length === 0) return;
+
+    try {
+      setOrderLoading(true);
+      
+      // Получаем информацию о ресторане (все товары должны быть из одного ресторана)
+      const restaurantId = cartItems[0].restaurant.id;
+      
+      // Создаем заказ
+      const { data: order, error: orderError } = await createOrder(
+        telegramUser.id,
+        restaurantId,
+        totalAmount
+      );
+
+      if (orderError) throw orderError;
+
+      // Добавляем элементы заказа
+      const orderItems = cartItems.map(item => ({
+        menu_item_id: item.menu_item.id,
+        quantity: item.quantity,
+        price: item.menu_item.price
+      }));
+
+      const { error: itemsError } = await addOrderItems(order.id, orderItems);
+      if (itemsError) throw itemsError;
+
+      // Очищаем корзину
+      await clearCartAfterOrder(telegramUser.id);
+      
+      // Обновляем локальное состояние
+      setCartItems([]);
+      
+      // Перенаправляем на страницу заказов
+      navigate('/orders');
+      
+    } catch (err: any) {
+      console.error('Error creating order:', err);
+      alert('Ошибка при создании заказа: ' + (err.message || 'Неизвестная ошибка'));
+    } finally {
+      setOrderLoading(false);
     }
   };
 
@@ -192,11 +241,11 @@ export default function CartPage() {
   return (
     <DefaultLayout>
       <div className="min-h-full bg-gradient-to-br from-blue-50 to-cyan-50 -mx-6">
-        <div className="px-4 py-6">
+        <div className="px-4 py-3">
           {/* <h1 className={title({ size: "lg" })}>Корзина</h1> */}
           
           {/* Список товаров по ресторанам */}
-          <div className="space-y-6 mt-6">
+          <div className="space-y-6 mt-2">
             {Object.values(itemsByRestaurant).map(({ restaurant, items }) => (
               <div key={restaurant.id} className="bg-white rounded-xl shadow-sm border border-gray-100">
                 {/* Заголовок ресторана */}
@@ -279,9 +328,11 @@ export default function CartPage() {
             </div>
             
             <button 
-              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+              onClick={handleCreateOrder}
+              disabled={orderLoading}
+              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Оформить заказ
+              {orderLoading ? 'Создание заказа...' : 'Оформить заказ'}
             </button>
           </div>
         </div>
