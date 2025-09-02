@@ -23,7 +23,7 @@ interface CartItem {
 }
 
 export default function CartPage() {
-  const { user: telegramUser, supabaseProfile } = useTelegram();
+  const { user: telegramUser } = useTelegram();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
