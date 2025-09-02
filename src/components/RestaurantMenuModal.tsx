@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody } from '@heroui/modal';
-import { getMenuItems, MenuItem, Restaurant, addToCart, getCartItemsByTelegramId } from '@/lib/supabase';
+import { getMenuItems, MenuItem, Restaurant, addToCart, getCartItemsByTelegramId, clearCartAfterOrder } from '@/lib/supabase';
 import { useTelegram } from '@/hooks/useTelegram';
 
 interface RestaurantMenuModalProps {
@@ -20,6 +20,9 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const { user: telegramUser, supabaseProfile } = useTelegram();
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
+  const [currentCartRestaurant, setCurrentCartRestaurant] = useState<string | null>(null);
+  const [showRestaurantConflictDialog, setShowRestaurantConflictDialog] = useState(false);
+  const [conflictItem, setConflictItem] = useState<{itemId: string, quantity: number} | null>(null);
 
   useEffect(() => {
     if (isOpen && restaurant) {
@@ -52,6 +55,14 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
 
     const currentQuantity = getItemQuantity(itemId);
     const newQuantity = Math.max(0, currentQuantity + change);
+
+    // Проверяем конфликт ресторанов при добавлении нового товара
+    if (newQuantity > currentQuantity && currentCartRestaurant && currentCartRestaurant !== restaurant.id) {
+      // Показываем диалог конфликта
+      setConflictItem({ itemId, quantity: newQuantity });
+      setShowRestaurantConflictDialog(true);
+      return;
+    }
 
     // Оптимистично обновляем UI
     if (newQuantity === 0) {
@@ -110,6 +121,14 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
         return;
       }
 
+      // Определяем текущий ресторан в корзине
+      if (cartItems.length > 0) {
+        const firstItem = cartItems[0];
+        setCurrentCartRestaurant(firstItem.restaurant_id);
+      } else {
+        setCurrentCartRestaurant(null);
+      }
+
       // Фильтруем товары только для текущего ресторана
       const restaurantCartItems = cartItems.filter(item => item.restaurant_id === restaurant?.id);
       
@@ -132,6 +151,41 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
     if (telegramUser) {
       await loadUserCart();
     }
+  };
+
+  // Функция для замены корзины
+  const handleReplaceCart = async () => {
+    if (!telegramUser || !restaurant || !conflictItem) return;
+
+    try {
+      // Очищаем текущую корзину
+      await clearCartAfterOrder(telegramUser.id);
+      
+      // Добавляем новый товар
+      const result = await addToCart(
+        telegramUser.id,
+        conflictItem.itemId,
+        restaurant.id,
+        conflictItem.quantity
+      );
+
+      if (result.error) {
+        console.error('Error replacing cart:', result.error);
+      } else {
+        // Обновляем корзину и закрываем диалог
+        await loadUserCart();
+        setShowRestaurantConflictDialog(false);
+        setConflictItem(null);
+      }
+    } catch (err) {
+      console.error('Error replacing cart:', err);
+    }
+  };
+
+  // Функция для отмены добавления
+  const handleCancelAddition = () => {
+    setShowRestaurantConflictDialog(false);
+    setConflictItem(null);
   };
 
   const loadMenuItems = async () => {
@@ -202,6 +256,11 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
                   >
                     {cartLoading ? '⏳' : '🔄'}
                   </button>
+                  {currentCartRestaurant && currentCartRestaurant !== restaurant?.id && (
+                    <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
+                      ⚠️ Другой ресторан в корзине
+                    </span>
+                  )}
                 </div>
               ) : (
                 <span className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-full">
@@ -328,6 +387,38 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
           )}
         </ModalBody>
       </ModalContent>
+      
+      {/* Диалог конфликта ресторанов */}
+      {showRestaurantConflictDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md mx-4">
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-4">⚠️</div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                Конфликт ресторанов
+              </h3>
+              <p className="text-gray-600">
+                На данный момент мы не поддерживаем добавление в корзину блюд из разных заведений
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelAddition}
+                className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleReplaceCart}
+                className="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+              >
+                Заменить корзину
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 };
