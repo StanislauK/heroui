@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase, Restaurant, Favorite, Order } from '@/lib/supabase'
+import { supabase, Restaurant, Order } from '@/lib/supabase'
 
 export function useRestaurants() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
@@ -31,7 +31,7 @@ export function useRestaurants() {
 }
 
 export function useFavorites(userId: string) {
-  const [favorites, setFavorites] = useState<Favorite[]>([])
+  const [favorites, setFavorites] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

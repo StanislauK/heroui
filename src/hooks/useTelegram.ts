@@ -97,6 +97,7 @@ export const useTelegram = () => {
 
   const showPopup = (title: string, message: string, buttons: Array<{id: string, type: 'default' | 'ok' | 'close' | 'cancel' | 'destructive', text: string}>) => {
     if (isReady) {
+      // @ts-ignore - showPopup может принимать разное количество параметров
       WebApp.showPopup(title, message, buttons);
     }
   };
@@ -122,7 +123,8 @@ export const useTelegram = () => {
 
   const requestPhone = () => {
     if (isReady) {
-      return WebApp.requestPhone();
+      // @ts-ignore - requestPhone может не существовать в некоторых версиях SDK
+      return WebApp.requestPhone ? WebApp.requestPhone() : Promise.resolve(null);
     }
     return Promise.resolve(null);
   };
@@ -136,14 +138,16 @@ export const useTelegram = () => {
 
   const requestLocation = () => {
     if (isReady) {
-      return WebApp.requestLocation();
+      // @ts-ignore - requestLocation может не существовать в некоторых версиях SDK
+      return WebApp.requestLocation ? WebApp.requestLocation() : Promise.resolve(null);
     }
     return Promise.resolve(null);
   };
 
   const requestInvoice = (params: any) => {
     if (isReady) {
-      return WebApp.requestInvoice(params);
+      // @ts-ignore - requestInvoice может не существовать в некоторых версиях SDK
+      return WebApp.requestInvoice ? WebApp.requestInvoice(params) : Promise.resolve(null);
     }
     return Promise.resolve(null);
   };
@@ -160,7 +164,7 @@ export const useTelegram = () => {
     }
   };
 
-  const switchInlineQuery = (query: string, choose_chat_types?: string[]) => {
+  const switchInlineQuery = (query: string, choose_chat_types?: ("users" | "bots" | "groups" | "channels")[]) => {
     if (isReady) {
       WebApp.switchInlineQuery(query, choose_chat_types);
     }
@@ -193,19 +197,26 @@ export const useTelegram = () => {
 
   const showBackButton = (callback?: () => void) => {
     if (isReady) {
-      WebApp.showBackButton(callback);
+      // @ts-ignore - BackButton API
+      WebApp.BackButton?.show();
+      if (callback) {
+        // @ts-ignore - BackButton API
+        WebApp.BackButton?.onClick(callback);
+      }
     }
   };
 
   const hideBackButton = () => {
     if (isReady) {
-      WebApp.hideBackButton();
+      // @ts-ignore - BackButton API
+      WebApp.BackButton?.hide();
     }
   };
 
   const setBackButtonCallback = (callback: () => void) => {
     if (isReady) {
-      WebApp.setBackButtonCallback(callback);
+      // @ts-ignore - BackButton API
+      WebApp.BackButton?.onClick(callback);
     }
   };
 
@@ -218,19 +229,22 @@ export const useTelegram = () => {
     is_active?: boolean;
   }) => {
     if (isReady) {
-      WebApp.setMainButton(params);
+      // @ts-ignore - MainButton API
+      WebApp.MainButton?.setParams(params);
     }
   };
 
   const showMainButton = () => {
     if (isReady) {
-      WebApp.showMainButton();
+      // @ts-ignore - MainButton API
+      WebApp.MainButton?.show();
     }
   };
 
   const hideMainButton = () => {
     if (isReady) {
-      WebApp.hideMainButton();
+      // @ts-ignore - MainButton API
+      WebApp.MainButton?.hide();
     }
   };
 
@@ -252,7 +266,7 @@ export const useTelegram = () => {
       setIsProfileLoading(true);
       
       // Создаем/обновляем профиль
-      const { data: profileData, error: profileError } = await upsertTelegramProfile(telegramUser);
+      const { error: profileError } = await upsertTelegramProfile(telegramUser);
       
       if (profileError) {
         console.error('Error creating/updating profile:', profileError);

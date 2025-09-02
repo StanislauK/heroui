@@ -69,7 +69,7 @@ export const TelegramTest: React.FC = () => {
     try {
       const contact = await requestContact();
       if (contact) {
-        showAlert(`Получен контакт: ${contact.first_name} ${contact.last_name || ''}`);
+        showAlert(`Получен контакт: ${(contact as any).first_name} ${(contact as any).last_name || ''}`);
       } else {
         showAlert('Пользователь не предоставил контакт');
       }
@@ -166,7 +166,7 @@ export const TelegramTest: React.FC = () => {
               )}
               <div>
                 <p className="font-medium text-gray-800">
-                  {user.first_name} {user.last_name || ''}
+                  {user?.first_name} {user?.last_name || ''}
                 </p>
                 {user.username && (
                   <p className="text-sm text-gray-600">@{user.username}</p>
@@ -361,7 +361,7 @@ export const TelegramTest: React.FC = () => {
                   const { addToCart } = await import('@/lib/supabase');
                   const result = await addToCart(user.id, 'test-menu-item-id', 'test-restaurant-id', 1);
                   if (result.error) {
-                    showAlert('Ошибка добавления в корзину: ' + result.error.message);
+                    showAlert('Ошибка добавления в корзину: ' + (result.error as any).message);
                   } else {
                     showAlert('Товар добавлен в корзину!');
                   }
@@ -383,7 +383,7 @@ export const TelegramTest: React.FC = () => {
                   const { getCartItemsByTelegramId } = await import('@/lib/supabase');
                   const result = await getCartItemsByTelegramId(user.id);
                   if (result.error) {
-                    showAlert('Ошибка получения корзины: ' + result.error.message);
+                    showAlert('Ошибка получения корзины: ' + (result.error as any).message);
                   } else {
                     showAlert(`В корзине ${result.data.length} товаров`);
                   }

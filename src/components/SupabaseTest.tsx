@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { getRestaurants, Restaurant } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
+import { getRestaurants } from '@/lib/supabase';
 
 export const SupabaseTest = () => {
   const [status, setStatus] = useState<string>('Проверяем подключение...');

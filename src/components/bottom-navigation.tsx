@@ -1,6 +1,6 @@
 import { Link } from "@heroui/link";
 import { useLocation } from "react-router-dom";
-import { HomeIcon, DocumentIcon, CreditCardIcon, UserIcon } from "@/components/icons";
+import { HomeIcon, DocumentIcon, CreditCardIcon } from "@/components/icons";
 
 export const BottomNavigation = () => {
   const location = useLocation();
