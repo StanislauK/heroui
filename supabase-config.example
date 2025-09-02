@@ -1,0 +1,4 @@
+# Скопируйте этот файл в .env.local и заполните своими данными
+
+VITE_SUPABASE_URL=https://quvdktfjrhwejshfrxax.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1dmRrdGZqcmh3ZWpzaGZyeGF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5NTEyNzIsImV4cCI6MjA1NjUyNzI3Mn0.j0p9JXD625rL6uoR7sFZa77NEGEIYJSxdtyMfjrf7co
