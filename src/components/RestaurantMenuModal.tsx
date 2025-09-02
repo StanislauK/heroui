@@ -16,6 +16,7 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
 }) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [cartLoading, setCartLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user: telegramUser, supabaseProfile } = useTelegram();
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
@@ -29,6 +30,17 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
     }
   }, [isOpen, restaurant, telegramUser]);
 
+  // Автоматически обновляем корзину каждые 30 секунд при открытом модальном окне
+  useEffect(() => {
+    if (!isOpen || !telegramUser) return;
+
+    const interval = setInterval(() => {
+      loadUserCart();
+    }, 30000); // 30 секунд
+
+    return () => clearInterval(interval);
+  }, [isOpen, telegramUser]);
+
   // Функция для получения количества товара
   const getItemQuantity = (itemId: string): number => {
     return itemQuantities[itemId] || 0;
@@ -41,33 +53,47 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
     const currentQuantity = getItemQuantity(itemId);
     const newQuantity = Math.max(0, currentQuantity + change);
 
+    // Оптимистично обновляем UI
     if (newQuantity === 0) {
-      // Удаляем товар из корзины
-      const newQuantities = { ...itemQuantities };
-      delete newQuantities[itemId];
-      setItemQuantities(newQuantities);
+      setItemQuantities(prev => {
+        const newQuantities = { ...prev };
+        delete newQuantities[itemId];
+        return newQuantities;
+      });
     } else {
-      // Обновляем количество
       setItemQuantities(prev => ({
         ...prev,
         [itemId]: newQuantity
       }));
+    }
 
-      // Добавляем в Supabase корзину
-      try {
-        const result = await addToCart(
-          telegramUser.id,
-          itemId,
-          restaurant.id,
-          newQuantity
-        );
+    // Синхронизируем с Supabase
+    try {
+      const result = await addToCart(
+        telegramUser.id,
+        itemId,
+        restaurant.id,
+        newQuantity
+      );
 
-        if (result.error) {
-          console.error('Error updating cart:', result.error);
-        }
-      } catch (err) {
-        console.error('Error adding to cart:', err);
+      if (result.error) {
+        console.error('Error updating cart:', result.error);
+        // Откатываем изменения при ошибке
+        setItemQuantities(prev => ({
+          ...prev,
+          [itemId]: currentQuantity
+        }));
+      } else {
+        // Обновляем корзину после успешного изменения
+        await loadUserCart();
       }
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      // Откатываем изменения при ошибке
+      setItemQuantities(prev => ({
+        ...prev,
+        [itemId]: currentQuantity
+      }));
     }
   };
 
@@ -76,6 +102,7 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
     if (!telegramUser) return;
 
     try {
+      setCartLoading(true);
       const { data: cartItems, error } = await getCartItemsByTelegramId(telegramUser.id);
       
       if (error) {
@@ -95,6 +122,15 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
       setItemQuantities(quantities);
     } catch (err) {
       console.error('Error loading user cart:', err);
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
+  // Функция для принудительного обновления корзины
+  const refreshCart = async () => {
+    if (telegramUser) {
+      await loadUserCart();
     }
   };
 
@@ -119,6 +155,7 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
 
   const handleClose = () => {
     setMenuItems([]);
+    setItemQuantities({});
     setError(null);
     onClose();
   };
@@ -157,6 +194,14 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
                       ⏳ Загрузка профиля...
                     </span>
                   )}
+                  <button
+                    onClick={refreshCart}
+                    disabled={cartLoading}
+                    className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Обновить корзину"
+                  >
+                    {cartLoading ? '⏳' : '🔄'}
+                  </button>
                 </div>
               ) : (
                 <span className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-full">
@@ -241,11 +286,16 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
                             <div className="flex items-center gap-2">
                               <button 
                                 onClick={() => handleQuantityChange(item.id, -1)}
-                                className="w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full flex items-center justify-center transition-colors font-medium text-sm"
+                                disabled={getItemQuantity(item.id) === 0}
+                                className="w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full flex items-center justify-center transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 -
                               </button>
-                              <span className="w-7 h-7 bg-blue-500 text-white rounded-full font-semibold text-sm flex items-center justify-center">
+                              <span className={`w-7 h-7 rounded-full font-semibold text-sm flex items-center justify-center ${
+                                getItemQuantity(item.id) > 0 
+                                  ? 'bg-green-500 text-white' 
+                                  : 'bg-gray-200 text-gray-500'
+                              }`}>
                                 {getItemQuantity(item.id)}
                               </span>
                               <button 
@@ -255,6 +305,13 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
                                 +
                               </button>
                             </div>
+                            
+                            {/* Индикатор добавления в корзину */}
+                            {getItemQuantity(item.id) > 0 && (
+                              <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full text-center">
+                                ✅ В корзине
+                              </div>
+                            )}
                             
                             {!item.is_available && (
                               <p className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded-full">
