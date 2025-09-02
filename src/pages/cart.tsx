@@ -193,7 +193,7 @@ export default function CartPage() {
     <DefaultLayout>
       <div className="min-h-full bg-gradient-to-br from-blue-50 to-cyan-50 -mx-6">
         <div className="px-4 py-6">
-          <h1 className={title({ size: "lg" })}>Корзина</h1>
+          {/* <h1 className={title({ size: "lg" })}>Корзина</h1> */}
           
           {/* Список товаров по ресторанам */}
           <div className="space-y-6 mt-6">
@@ -234,11 +234,7 @@ export default function CartPage() {
                             {item.menu_item.description}
                           </p>
                         )}
-                        {item.menu_item.category && (
-                          <p className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full inline-block mt-1">
-                            {item.menu_item.category}
-                          </p>
-                        )}
+
                       </div>
                       
                       {/* Цена и управление количеством */}
@@ -266,10 +262,7 @@ export default function CartPage() {
                           </button>
                         </div>
                         
-                        {/* Общая цена за товар */}
-                        <p className="text-sm text-gray-600">
-                          Итого: <span className="font-semibold">{item.menu_item.price * item.quantity} ₽</span>
-                        </p>
+
                       </div>
                     </div>
                   ))}
@@ -279,25 +272,17 @@ export default function CartPage() {
           </div>
           
           {/* Итоговая информация */}
-          <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="mt-8">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold text-gray-800">Итого к оплате:</h3>
               <span className="text-2xl font-bold text-blue-600">{totalAmount} ₽</span>
             </div>
             
-            <div className="flex gap-3">
-              <button 
-                onClick={loadCart}
-                className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-colors font-medium"
-              >
-                Обновить
-              </button>
-              <button 
-                className="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium"
-              >
-                Оформить заказ
-              </button>
-            </div>
+            <button 
+              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            >
+              Оформить заказ
+            </button>
           </div>
         </div>
       </div>
