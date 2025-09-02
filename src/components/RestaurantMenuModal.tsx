@@ -223,11 +223,6 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
       placement="bottom"
       size="5xl"
       scrollBehavior="inside"
-      classNames={{
-        base: "h-[70vh] max-h-[70vh] mt-auto",
-        wrapper: "h-[70vh] max-h-[70vh]",
-        body: "h-full overflow-y-auto"
-      }}
     >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
@@ -276,14 +271,14 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
           </div>
         </ModalHeader>
         
-        <ModalBody className="h-full">
+        <ModalBody>
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-full">
+            <div className="flex flex-col items-center justify-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
               <p className="text-gray-600">Загружаем меню...</p>
             </div>
           ) : error ? (
-            <div className="text-center h-full flex flex-col items-center justify-center">
+            <div className="text-center py-16">
               <div className="text-6xl mb-4">❌</div>
               <p className="text-red-600 mb-2">Ошибка загрузки меню</p>
               <p className="text-gray-600 text-sm">{error}</p>
@@ -295,12 +290,12 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
               </button>
             </div>
           ) : menuItems.length === 0 ? (
-            <div className="text-center h-full flex flex-col items-center justify-center">
+            <div className="text-center py-16">
               <div className="text-6xl mb-4">🍽️</div>
               <p className="text-gray-600">Меню пока не доступно</p>
             </div>
           ) : (
-            <div className="space-y-6 h-full">
+            <div className="space-y-6">
               {/* Группируем блюда по категориям */}
               {Array.from(new Set(menuItems.map(item => item.category))).map(category => (
                 <div key={category} className="space-y-3">
