@@ -256,24 +256,6 @@ function ListContent({ onShowMenu }: { onShowMenu: (restaurant: Restaurant) => v
               {restaurant.address && (
                 <p className="text-gray-500 text-sm mb-1">📍 {restaurant.address}</p>
               )}
-              {restaurant.phone && (
-                <p className="text-gray-500 text-sm">📞 {restaurant.phone}</p>
-              )}
-            </div>
-            <div className="text-right flex-shrink-0">
-              <div className="flex items-center gap-1 text-yellow-500 mb-2">
-                <span>⭐</span>
-                <span className="font-semibold text-lg">{restaurant.rating}</span>
-              </div>
-              <div className="text-sm text-gray-600">
-                <p>🕒 {restaurant.delivery_time_min}-{restaurant.delivery_time_max} мин</p>
-                <p className="text-blue-600 font-medium">💰 От {restaurant.min_order_amount} ₽</p>
-              </div>
-              <div className={`mt-2 px-2 py-1 rounded-full text-xs ${
-                restaurant.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
-                {restaurant.is_active ? 'Открыто' : 'Закрыто'}
-              </div>
             </div>
           </div>
           
