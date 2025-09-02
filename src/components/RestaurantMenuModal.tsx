@@ -224,7 +224,7 @@ export const RestaurantMenuModal: React.FC<RestaurantMenuModalProps> = ({
       size="5xl"
       scrollBehavior="inside"
       classNames={{
-        base: "h-[70vh] max-h-[70vh]",
+        base: "h-[70vh] max-h-[70vh] mt-auto",
         wrapper: "h-[70vh] max-h-[70vh]",
         body: "h-full overflow-y-auto"
       }}
