@@ -196,6 +196,9 @@ export default function CartPage() {
     return groups;
   }, {} as Record<string, { restaurant: any, items: CartItem[] }>);
 
+  // Проверяем, есть ли товары из разных ресторанов
+  const hasMultipleRestaurants = Object.keys(itemsByRestaurant).length > 1;
+
   if (!telegramUser) {
     return (
       <DefaultLayout>
@@ -275,6 +278,19 @@ export default function CartPage() {
         <div className="px-4 py-3">
           {/* <h1 className={title({ size: "lg" })}>Корзина</h1> */}
           
+          {/* Предупреждение о конфликте ресторанов */}
+          {hasMultipleRestaurants && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="text-red-600">⚠️</div>
+                <div className="text-sm text-red-800">
+                  <p className="font-medium">В корзине товары из разных ресторанов</p>
+                  <p>Для оформления заказа оставьте товары только из одного ресторана</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Список товаров по ресторанам */}
           <div className="space-y-6 mt-2">
             {Object.values(itemsByRestaurant).map(({ restaurant, items }) => (
@@ -360,15 +376,16 @@ export default function CartPage() {
             
             <button 
               onClick={handleCreateOrder}
-              disabled={orderLoading || hasActiveOrder}
+              disabled={orderLoading || hasActiveOrder || hasMultipleRestaurants}
               className={`w-full py-3 px-4 rounded-lg transition-colors font-medium ${
-                hasActiveOrder 
+                hasActiveOrder || hasMultipleRestaurants
                   ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
                   : 'bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed'
               }`}
             >
               {orderLoading ? 'Создание заказа...' : 
-               hasActiveOrder ? 'Активный заказ в процессе' : 'Оформить заказ'}
+               hasActiveOrder ? 'Активный заказ в процессе' : 
+               hasMultipleRestaurants ? 'Уберите товары из разных ресторанов' : 'Оформить заказ'}
             </button>
             
             {/* Информация об активном заказе */}
