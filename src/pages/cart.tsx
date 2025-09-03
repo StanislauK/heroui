@@ -1,7 +1,7 @@
 import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
 import { useTelegram } from "@/hooks/useTelegram";
-import { getCartItemsByTelegramId, updateCartItemQuantity, removeFromCart, createOrder, addOrderItems, clearCartAfterOrder, getOrders } from "@/lib/supabase";
+import { getCartItemsByTelegramId, updateCartItemQuantity, removeFromCart, createOrder, addOrderItems, clearCartAfterOrder } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -30,40 +30,15 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orderLoading, setOrderLoading] = useState(false);
-  const [hasActiveOrder, setHasActiveOrder] = useState(false);
 
   // Загружаем корзину пользователя
   useEffect(() => {
     if (telegramUser) {
       loadCart();
-      checkActiveOrders();
     } else {
       setLoading(false);
     }
   }, [telegramUser]);
-
-  // Проверяем активные заказы пользователя
-  const checkActiveOrders = async () => {
-    if (!telegramUser) return;
-
-    try {
-      const { data: orders, error } = await getOrders(`telegram_${telegramUser.id}`);
-      
-      if (error) {
-        console.error('Error checking orders:', error);
-        return;
-      }
-
-      // Проверяем есть ли заказы не в статусе completed или cancelled
-      const activeOrders = orders?.filter(order => 
-        order.status !== 'completed' && order.status !== 'cancelled'
-      ) || [];
-
-      setHasActiveOrder(activeOrders.length > 0);
-    } catch (err) {
-      console.error('Error checking active orders:', err);
-    }
-  };
 
   const loadCart = async () => {
     if (!telegramUser) return;
@@ -129,12 +104,6 @@ export default function CartPage() {
   // Создаем заказ
   const handleCreateOrder = async () => {
     if (!telegramUser || cartItems.length === 0) return;
-
-    // Проверяем есть ли активные заказы
-    if (hasActiveOrder) {
-      alert('У вас имеется активный заказ\n\nПожалуйста дождитесь выполнения предыдущего заказа');
-      return;
-    }
 
     try {
       setOrderLoading(true);
@@ -360,29 +329,11 @@ export default function CartPage() {
             
             <button 
               onClick={handleCreateOrder}
-              disabled={orderLoading || hasActiveOrder}
-              className={`w-full py-3 px-4 rounded-lg transition-colors font-medium ${
-                hasActiveOrder 
-                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                  : 'bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed'
-              }`}
+              disabled={orderLoading}
+              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {orderLoading ? 'Создание заказа...' : 
-               hasActiveOrder ? 'Активный заказ в процессе' : 'Оформить заказ'}
+              {orderLoading ? 'Создание заказа...' : 'Оформить заказ'}
             </button>
-            
-            {/* Информация об активном заказе */}
-            {hasActiveOrder && (
-              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div className="text-yellow-600">⚠️</div>
-                  <div className="text-sm text-yellow-800">
-                    <p className="font-medium">У вас имеется активный заказ</p>
-                    <p>Пожалуйста дождитесь выполнения предыдущего заказа</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
